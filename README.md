@@ -1,5 +1,6 @@
 capstoneProject_v0.2.html describes how this model was created 
 and this html file was created using the RMarkdown file of the same name
+The html file can be accessed here https://rpubs.com/IcedMcstuffin/1428801
 
 The raw dataset used for this project can be found here
 https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip
