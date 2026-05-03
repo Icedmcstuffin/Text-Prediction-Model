@@ -2,6 +2,7 @@
 
 library(tidytext)
 library(dplyr)
+library(data.table)
 
 dir.create("data", showWarnings = FALSE)
 
@@ -33,8 +34,13 @@ rm(rawdata); gc()
 
 # --- Unigram ---
 wordfrequency <- tokenblogs %>% count(word, sort = TRUE)
+
+wordfrequency <- wordfrequency[,c(1:15)]
 saveRDS(wordfrequency, "data/wordfrequency.rds")
+rm(wordfrequency)
+gc()
 cat("Saved wordfrequency\n")
+
 
 # --- Bigram ---
 bigramfrequency <- tokenblogs %>%
@@ -44,6 +50,11 @@ bigramfrequency <- tokenblogs %>%
   mutate(bigram = paste(word, nextword)) %>%
   ungroup() %>%
   count(word, nextword, bigram, sort = TRUE)
+
+bigramfrequency <- as.data.table(bigramfrequency)
+# This line keeps only the top 3 prediction for each 2-gram
+bigramfrequency <- bigramfrequency[order(-n)][, .SD[1:min(3,.N)], by = .(word)]
+bigramfrequency  <- as.data.frame(bigramfrequency)
 
 saveRDS(bigramfrequency, "data/bigramfrequency.rds")
 rm(bigramfrequency); gc()
@@ -57,6 +68,11 @@ trigramfrequency <- tokenblogs %>%
   mutate(trigram = paste(word, nextword, nexttonextword)) %>%
   ungroup() %>%
   count(word, nextword, nexttonextword, trigram, sort = TRUE)
+
+trigramfrequency <- as.data.table(trigramfrequency)
+# This line keeps only the top 3 predictions for each ngram
+trigramfrequency <- trigramfrequency[order(-n)][, .SD[1:min(3,.N)], by = .(word, nextword)]
+trigramfrequency <- as.data.frame(trigramfrequency)
 
 saveRDS(trigramfrequency, "data/trigramfrequency.rds")
 rm(trigramfrequency); gc()
