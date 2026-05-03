@@ -35,7 +35,7 @@ rm(rawdata); gc()
 # --- Unigram ---
 wordfrequency <- tokenblogs %>% count(word, sort = TRUE)
 
-wordfrequency <- wordfrequency[,c(1:15)]
+wordfrequency <- wordfrequency[c(1:15),]
 saveRDS(wordfrequency, "data/wordfrequency.rds")
 rm(wordfrequency)
 gc()
