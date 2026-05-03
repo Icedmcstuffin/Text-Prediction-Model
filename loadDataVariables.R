@@ -1,5 +1,7 @@
 # Loading all the dataframes in /data
 
+cat("Please wait while we load necessary datasets")
+
 wordfrequency <- readRDS("data/wordfrequency.rds")
 cat("wordfrequency variable has been loaded.\n")
 
@@ -8,3 +10,5 @@ cat("bigramfrequency variable has been loaded.\n")
 
 trigramfrequency <- readRDS("data/trigramfrequency.rds")
 cat("trigramfrequency variable has been loaded.\n")
+
+cat("Your app is ready to proceed.\n")
