@@ -1,6 +1,6 @@
 # Loading all the dataframes in /data
 
-cat("Please wait while we load necessary datasets")
+cat("Please wait while we load necessary datasets\n")
 
 wordfrequency <- readRDS("data/wordfrequency.rds")
 cat("wordfrequency variable has been loaded.\n")
