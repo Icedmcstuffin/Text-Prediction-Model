@@ -1,0 +1,169 @@
+---
+title: "capstoneProject_v0.2"
+author: "IcedMcstuffin"
+date: "2026-05-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 0. Introduction
+This project will work on making a next text predictor with the utilisation of Natural Language Processing. This project uses the files named LOCALE.blogs.txt where LOCALE is the each of the four locales en_US, de_DE, ru_RU and fi_FI. The data is from a corpus called HC Corpora.
+
+```{r message=FALSE}
+library(tidytext)
+library(dplyr)
+```
+
+# 1. Task1: Getting and cleaning the data
+We will load the blogs, twitter and news data into a combined dataframe and prepare a sample using the rbinom function.
+
+## 1.1 Reading the data and preparing a combined dataset
+```{r warning=FALSE, eval=FALSE}
+con <- file("final/en_US/en_US.blogs.txt", "r")
+rawblogs <- data.frame(text = readLines(con), source = "blog")
+close(con)
+
+con <- file("final/en_US/en_US.news.txt", "r")
+rawnews <- data.frame(text = readLines(con), source = "news")
+close(con)
+
+con <- file("final/en_US/en_US.twitter.txt", "r")
+rawtwitter <- data.frame(text = readLines(con), source = "twitter")
+close(con)
+
+# Combine all three into one dataset with a unique id and source column
+rawdata <- bind_rows(rawblogs, rawnews, rawtwitter) %>%
+  mutate(id = row_number()) %>%
+  select(id, source, text)
+```
+
+## 1.2 Tokenising each word in the sample dataset accounting for punctuation and numbers
+```{r eval=FALSE}
+tokenblogs <- rawdata %>%
+  unnest_tokens(word, input = text) %>%
+  filter(grepl("^[a-z]+$", word))
+```
+
+# 2. Task 2: Exploratory analysis
+
+### 2.1 Distribution of word frequencies
+```{r  eval = FALSE}
+wordfrequency <- tokenblogs %>% count(word, sort = TRUE)
+```
+
+```{r echo = FALSE, cache = TRUE}
+wordfrequency <- readRDS("data/wordfrequency.rds")
+```
+
+
+```{r fig.height=10, fig.width=20, cache = TRUE}
+barplot(wordfrequency$n[1:10], names.arg = wordfrequency$word[1:10], las = 2,
+        main = "Frequency of most common words", ylab = "Frequency", col = "steelblue")
+```
+
+### 2.2 Frequencies of 2-grams and 3-grams
+
+Generating a 2-gram dataset
+```{r eval = FALSE}
+# 2-gram generation
+bigram <- tokenblogs %>%
+  group_by(id) %>%
+  mutate(nextword = lead(word)) %>%
+  filter(!is.na(nextword)) %>%
+  mutate(bigram = paste(word, nextword))
+```
+
+Sorting the table by frequency of each 2-gram
+```{r eval = FALSE}
+bigramfrequency <- bigram %>%
+  count(word, nextword, bigram, sort = TRUE)
+```
+
+```{r echo = FALSE, cache = TRUE}
+bigramfrequency <- readRDS("data/bigramfrequency.rds")
+```
+
+
+```{r cache=TRUE, fig.height=10, fig.width=20}
+barplot(bigramfrequency$n[1:10], names.arg = bigramfrequency$bigram[1:10], las = 2,
+        main = "Frequency of most common bigrams", ylab = "Frequency", col = "steelblue")
+```
+
+Generating a 3-gram dataset
+```{r eval = FALSE}
+# 3-gram generation
+trigram <- tokenblogs %>%
+  group_by(id) %>%
+  mutate(nextword = lead(word), nexttonextword = lead(word, n = 2L)) %>%
+  filter(!is.na(nextword), !is.na(nexttonextword)) %>%
+  mutate(trigram = paste(word, nextword, nexttonextword))
+```
+
+Sorting the table by frequency of each 3-gram
+```{r eval=FALSE}
+trigramfrequency <- trigram %>%
+  count(word, nextword, nexttonextword, trigram, sort = TRUE)
+```
+
+```{r echo=FALSE, cache=TRUE}
+trigramfrequency <- readRDS("data/trigramfrequency.rds")
+```
+
+
+```{r cache=TRUE, fig.height=10, fig.width=20}
+barplot(trigramfrequency$n[1:10], names.arg = trigramfrequency$trigram[1:10], las = 2,
+        main = "Frequency of most common trigrams", ylab = "Frequency", col = "steelblue")
+```
+
+### 2.3 How many unique words do you need in a frequency sorted dictionary to cover 50% of all word instances in the language? 90%?
+```{r cache=TRUE}
+cumulative <- cumsum(wordfrequency$n) / sum(wordfrequency$n)
+words_50 <- which(cumulative >= 0.50)[1]
+words_90 <- which(cumulative >= 0.90)[1]
+cat("Unique words needed to cover 50% of all instances:", words_50, "\n")
+cat("Unique words needed to cover 90% of all instances:", words_90, "\n")
+```
+
+### 2.4 How do you evaluate how many of the words come from foreign languages or profane?
+Foreign language detection can be achieved by including a dictionary dataset and ensuring that every word token is included in the dictionary. The same can be established by a profanity dictionary and ensuring that every word token is not included in the dictionary.
+
+# 3. Task 3: Modelling an ngram function based on the dataset
+A Backoff model will be used where primarily a 4-gram will be assessed, and if unseen, 3-gram will be assessed, and if it falls in an unseen n-gram, we will fall to 2-gram, which if unseen, we will fall back to 1-gram. In case of 1-gram, we will return the most common word.
+
+```{r cache = TRUE}
+predictword <- function(word1, word2) {
+  word1 <- tolower(word1)
+  word2 <- tolower(word2)
+
+
+  # Trigram check
+  result <- trigramfrequency %>%
+    filter(word == word1, nextword == word2) %>%
+    arrange(desc(n))
+
+  if (nrow(result) > 0) {
+    return(result$nexttonextword[1:min(3, nrow(result))])
+  }
+
+  # Backoff to bigram check
+  result <- bigramfrequency %>%
+    filter(word == word2) %>%
+    arrange(desc(n))
+
+  if (nrow(result) > 0) {
+    return(result$nextword[1:min(3, nrow(result))])
+  }
+
+  # Backoff to unigram
+  return(wordfrequency$word[1:3])
+}
+```
+
+### Task 4: Efficiency analysis
+The time taken for this predictive model can be assessed.
+```{r cache=TRUE}
+system.time(predictword("will", "see"))
+```
