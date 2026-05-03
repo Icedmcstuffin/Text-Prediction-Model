@@ -1,0 +1,47 @@
+---
+title: "nextWordPredictor"
+author: "IcedMcstuffin"
+date: "2026-05-03"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## App Details
+This app takes in a phrase from the user and outputs a list of next 3 predicted words.
+
+## How does it work?
+Training process: It took data from a vast amount of blogs, tweets and news for training and forms a dataset for unigram, bigram and trigram.
+
+Prediction process: For phrase input it receives, it takes into account the last 2 words and predicts the next word by using the 3-gram dataset, which if it fails, will move on to looking at the last word and predict using the 2-gram dataset, which if it fails, then will use the unigram dataset to predict the most common word it learned from the training process
+
+## Performance of the app
+
+The app takes a dataset of around 90 MB to load up and each input
+responds its output with the following performance:
+
+| Scenario | Input | Elapsed Time |
+|---|---|---|
+| Trigram hit | "how are" | 0.253s |
+| Trigram hit | "in the" | 0.169s |
+| Unigram fallback | "xkqzp zzzzz" | 0.148s |
+
+- **Cold start load time:** ~3–5 seconds (loading 90 MB of data)
+- **Per prediction:** under 300ms
+- **Predictions returned:** always exactly 3 words
+- **Fallback works:** unknown words still return a prediction via unigram
+
+## Reference links
+
+The nextWordPredictor app: https://icedmcstuffin.shinyapps.io/nextWordPredictor/
+
+RPubs article explaining the model:(https://rpubs.com/IcedMcstuffin/1428801)
+
+The dataset used to train the model: (https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip)
+
+The github repository for this model: (https://github.com/Icedmcstuffin/Text-Prediction-Model)
+
+
+
