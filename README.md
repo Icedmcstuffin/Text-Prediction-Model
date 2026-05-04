@@ -13,5 +13,6 @@ predictword.R has a function predictword(word1, word2) which takes two words and
 
 Sources:
 The nextWordPredictor app: https://icedmcstuffin.shinyapps.io/nextWordPredictor/
+Its code can be accessed in the nextWordPredictor directory
 
 The dataset used to train the model: (https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip)
